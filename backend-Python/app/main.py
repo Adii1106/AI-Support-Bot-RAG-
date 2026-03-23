@@ -120,7 +120,7 @@ async def chat(request: ChatRequest):
 
         system_prompt = f"""You are a helpful AI Assistant. 
 Answer EXCLUSIVELY based on the provided context. If not found, say you don't know.
-        
+         
 Context:
 {context or "No relevant documentation found."}
 """
