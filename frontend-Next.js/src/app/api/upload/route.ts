@@ -13,7 +13,8 @@ export async function POST(req: Request) {
         const pythonFormData = new FormData();
         pythonFormData.append('file', file);
 
-        const res = await fetch('http://localhost:8000/upload', {
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+        const res = await fetch(`${backendUrl}/upload`, {
             method: 'POST',
             body: pythonFormData,
         });
