@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function DELETE() {
     try {
-        const res = await fetch('http://localhost:8000/clear', {
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+        const res = await fetch(`${backendUrl}/clear`, {
             method: 'DELETE'
         });
 
