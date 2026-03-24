@@ -9,7 +9,10 @@ export async function POST(req: Request) {
     }
 
     // Call our Python AI backend
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    let backendUrl = (process.env.BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+    
+    console.log(`Talking to backend at: ${backendUrl}/chat`);
+
     const response = await fetch(`${backendUrl}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
