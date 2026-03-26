@@ -13,37 +13,50 @@ export async function POST(req: Request) {
     
     console.log(`Talking to backend at: ${backendUrl}/chat`);
 
-    const response = await fetch(`${backendUrl}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, history }),
-    });
+    try {
+        const response = await fetch(`${backendUrl}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, history }),
+            cache: 'no-store',
+            signal: AbortSignal.timeout(8000) // 8 second timeout
+        });
 
-    const data = await response.json();
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Backend Error (${response.status}): ${errorText}`);
+        }
 
-    if (!response.ok) throw new Error(data.detail || 'Python server error');
+        const data = await response.json();
 
-    // For now, Python sends back the full text. 
-    // We'll wrap it in a stream-like response so the frontend stays happy.
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ text: data.text })}\n\n`));
-        controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-        controller.close();
-      },
-    });
+        // Wrap it in a stream-like response
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ text: data.text })}\n\n`));
+                controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                controller.close();
+            },
+        });
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
+        });
+
+    } catch (fetchError: any) {
+        console.error('Fetch to Python failed:', fetchError);
+        return NextResponse.json({ 
+            error: `Vercel could not reach Hugging Face. Error: ${fetchError.message}`,
+            url: `${backendUrl}/chat`
+        }, { status: 502 });
+    }
 
   } catch (error: any) {
     console.error('Chat error:', error);
-    return NextResponse.json({ error: 'AI Brain is offline. Is the Python server running on :8000?' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

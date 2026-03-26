@@ -53,7 +53,10 @@ export default function ChatWidget() {
                 }),
             });
 
-            if (!response.ok) throw new Error('API down');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Server error');
+            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error('No reader');
@@ -93,9 +96,9 @@ export default function ChatWidget() {
                     }
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Chat error:', error);
-            setMessages((prev) => [...prev, { role: 'assistant', content: "Oops, my brain is offline. Make sure the Python server is running on port 8000!" }]);
+            setMessages((prev) => [...prev, { role: 'assistant', content: `🚨 ${error.message}` }]);
         } finally {
             setIsLoading(false);
             setIsStreaming(false);
