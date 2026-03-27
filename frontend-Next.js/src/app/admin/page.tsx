@@ -33,6 +33,9 @@ export default function AdminDashboard() {
       if (res.ok) {
         setUploadStatus('success');
         setFile(null);
+        setTimeout(() => {
+          alert("🎉 Document trained successfully!\n\nYou can now return to the Home page and ask the chat widget questions about this document.");
+        }, 100);
       } else {
         setUploadStatus('error');
       }
@@ -149,8 +152,33 @@ export default function AdminDashboard() {
 
           {/* dummy analytics for the demo */}
           <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-bold flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2 text-indigo-500" />
+            
+            {/* New Data Analysis Upcoming Feature Block */}
+            <div className="bg-indigo-900 text-white rounded-2xl p-6 shadow-sm border border-indigo-800 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4">
+                <span className="bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Upcoming Feature</span>
+              </div>
+              <h2 className="text-xl font-bold mb-2 flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-indigo-300" />
+                Data Analysis Agent (Structured RAG)
+              </h2>
+              <p className="text-indigo-200 mb-6 text-sm">
+                Soon, you will be able to upload CSV files (like customer support tickets or sales data). The AI will dynamically generate SQL queries to answer analytical questions about your datasets.
+              </p>
+              
+              <div className="border-2 border-dashed border-indigo-700 bg-indigo-800/50 rounded-xl p-6 flex flex-col items-center justify-center text-center opacity-70 cursor-not-allowed">
+                <div className="p-3 bg-indigo-800 rounded-full mb-3">
+                  <UploadCloud className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                  <p className="font-medium text-indigo-100">Upload CSV Dataset (Coming Soon)</p>
+                  <p className="text-sm text-indigo-300 mt-1">.csv files only</p>
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-xl font-bold flex items-center pt-4">
+              <BarChart3 className="w-5 h-5 mr-2 text-slate-500" />
               Widget Analytics
             </h2>
 
