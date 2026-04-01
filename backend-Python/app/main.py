@@ -109,13 +109,17 @@ async def chat(request: ChatRequest):
         # 2. Search Supabase using the match_document_chunks RPC
         rpc_params = {
             "query_embedding": query_embedding,
-            "match_threshold": 0.5,
+            "match_threshold": 0.3, # Lowered threshold to pick up more context
             "match_count": 5
         }
         search_res = supabase.rpc("match_document_chunks", rpc_params).execute()
         chunks = search_res.data if search_res.data else []
 
-        # 3. Build context
+        # 3. Hard Guardrail: If no info is found in DB, don't even talk to the LLM
+        if not chunks:
+            return {"text": "I'm sorry, but I cannot find any information about that in the current documentation."}
+
+        # 4. Build context
         context = ""
         if chunks:
             context = "\n\n---\n\n".join([
@@ -123,16 +127,16 @@ async def chat(request: ChatRequest):
                 for c in chunks
             ])
 
-        system_prompt = f"""You are a strict technical support AI.
-You must answer the user's question EXCLUSIVELY using the information in the <CONTEXT> tags below.
-If the answer is NOT explicitly written in the <CONTEXT>, you MUST reply with: "I'm sorry, but I cannot find the answer to that in the current documentation."
-Under NO circumstances should you use your general knowledge to answer the question.
+        system_prompt = f"""You are a strict technical support AI. 
+You answer questions ONLY using the information in the <CONTEXT> tags.
+If the answer is not explicitly in the context, you must say you don't know.
+Do not use any external knowledge.
 
 <CONTEXT>
-{context or 'No relevant documentation found.'}
+{context}
 </CONTEXT>"""
 
-        # 4. Talk to Groq
+        # 5. Talk to Groq
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(request.history)
         messages.append({"role": "user", "content": request.prompt})
