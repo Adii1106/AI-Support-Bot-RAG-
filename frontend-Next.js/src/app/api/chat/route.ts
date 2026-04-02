@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     }
 
     // Call our Python AI backend
-    let backendUrl = (process.env.BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+    let backendUrl = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
     
     console.log(`Talking to backend at: ${backendUrl}/chat`);
 

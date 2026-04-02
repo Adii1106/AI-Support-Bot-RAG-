@@ -13,7 +13,7 @@ export async function POST(req: Request) {
         const pythonFormData = new FormData();
         pythonFormData.append('file', file);
 
-        let backendUrl = (process.env.BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
+        let backendUrl = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
         console.log(`Uploading to: ${backendUrl}/upload`);
 
         const res = await fetch(`${backendUrl}/upload`, {
