@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) {
-    return NextResponse.json({ error: 'BACKEND_URL is not configured' }, { status: 500 });
-  }
-
-  // Ensure url structure doesn't break due to trailing slashes
-  const baseUrl = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
+  const backendUrl = (process.env.BACKEND_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 
   try {
-    const response = await fetch(`${baseUrl}/documents`, {
+    const response = await fetch(`${backendUrl}/documents`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -19,11 +13,13 @@ export async function GET() {
     });
 
     const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+    if (!response.ok) throw new Error(data.detail || 'Python backend error');
+    
+    return NextResponse.json(data, { status: 200 });
+  } catch (error: any) {
     console.error('Proxy Error (/documents):', error);
     return NextResponse.json(
-      { error: 'Failed to connect to Python backend' },
+      { error: `Connection Failed: ${error.message}` },
       { status: 502 }
     );
   }
