@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UploadCloud, FileText, CheckCircle, BarChart3, AlertCircle, ThumbsUp, HelpCircle, Database, ArrowLeft } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -8,6 +8,27 @@ export default function AdminDashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState<'upload' | 'analytics'>('upload');
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+
+  const fetchDocuments = async () => {
+    try {
+      setIsLoadingDocs(true);
+      const res = await fetch('/api/documents');
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch documents", err);
+    } finally {
+      setIsLoadingDocs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -34,6 +55,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         setUploadStatus('success');
         setFile(null);
+        fetchDocuments();
         setTimeout(() => {
           alert("🎉 Document trained successfully!\n\nYou can now return to the Home page and ask the chat widget questions about this document.");
         }, 100);
@@ -176,15 +198,49 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end">
+                {/* Active Documents List */}
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                  <h4 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Currently Trained Documents</h4>
+                  
+                  {isLoadingDocs ? (
+                    <div className="flex justify-center p-4">
+                      <div className="animate-spin h-5 w-5 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
+                    </div>
+                  ) : documents.length === 0 ? (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-sm text-slate-500">
+                      No documents in the knowledge base yet. Upload one above!
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                      {documents.map((doc, idx) => (
+                        <div key={doc.id || idx} className="flex items-start p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-200 transition-colors">
+                          <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                          <div className="overflow-hidden">
+                            <p className="font-medium text-slate-800 text-sm truncate" title={doc.title}>{doc.title}</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {new Date(doc.created_at).toLocaleDateString()} at {new Date(doc.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                  <span className="text-xs flex items-center text-slate-500 bg-slate-100 px-2 py-1 rounded-md font-medium">
+                    <FileText className="w-3 h-3 mr-1" />
+                    {documents.length} File{documents.length !== 1 ? 's' : ''} Indexed
+                  </span>
                   <button
                     onClick={async () => {
                       if (confirm('Wipe everything?')) {
                         await fetch('/api/upload/clear', { method: 'DELETE' });
+                        fetchDocuments();
                         alert('Done. DB is clean.');
                       }
                     }}
-                    className="text-xs text-slate-400 hover:text-red-500 transition-colors"
+                    className="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
                   >
                     Reset Knowledge Base
                   </button>

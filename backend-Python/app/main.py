@@ -1,5 +1,9 @@
 import os
 import io
+
+# Fix HuggingFace tokenizers fork warning before any threading
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -24,12 +28,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize clients
-supabase: Client = create_client(
-    os.getenv("NEXT_PUBLIC_SUPABASE_URL"),
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-)
-groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
+# Initialize clients securely (stripping hidden newlines/spaces)
+supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "").strip()
+supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+groq_key = os.getenv("GROQ_API_KEY", "").strip()
+
+supabase: Client = create_client(supabase_url, supabase_key)
+groq = Groq(api_key=groq_key)
 
 # Using a lightweight local model for embeddings 
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -118,12 +123,14 @@ async def chat(request: ChatRequest):
                 for c in chunks
             ])
 
-        system_prompt = f"""You are a helpful AI Assistant. 
-Answer EXCLUSIVELY based on the provided context. If not found, say you don't know.
-         
-Context:
-{context or "No relevant documentation found."}
-"""
+        system_prompt = f"""You are a strict technical support AI.
+You must answer the user's question EXCLUSIVELY using the information in the <CONTEXT> tags below.
+If the answer is NOT explicitly written in the <CONTEXT>, you MUST reply with: "I'm sorry, but I cannot find the answer to that in the current documentation."
+Under NO circumstances should you use your general knowledge to answer the question.
+
+<CONTEXT>
+{context or 'No relevant documentation found.'}
+</CONTEXT>"""
 
         # 4. Talk to Groq
         messages = [{"role": "system", "content": system_prompt}]
@@ -141,6 +148,15 @@ Context:
 
     except Exception as e:
         print(f"Chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/documents")
+async def get_documents():
+    try:
+        res = supabase.table("documents").select("id, title, created_at").order("created_at", desc=True).execute()
+        return {"success": True, "documents": res.data}
+    except Exception as e:
+        print(f"Fetch documents error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/clear")
