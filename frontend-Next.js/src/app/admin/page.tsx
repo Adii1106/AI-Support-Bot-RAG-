@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { UploadCloud, FileText, CheckCircle, BarChart3, AlertCircle, ThumbsUp, HelpCircle, Database } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, BarChart3, AlertCircle, ThumbsUp, HelpCircle, Database, ArrowLeft } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
@@ -75,6 +75,12 @@ export default function AdminDashboard() {
             Analytics
           </button>
         </div>
+        <div className="p-4 border-t border-slate-200">
+          <a href="/" className="w-full flex items-center justify-center px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors font-medium">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Go to Chat
+          </a>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -82,8 +88,13 @@ export default function AdminDashboard() {
         <div className="max-w-4xl mx-auto space-y-8">
 
           {/* Mobile Header */}
-          <header className="pb-6 border-b border-slate-200 flex justify-between items-center md:hidden">
-             <h1 className="text-2xl font-extrabold text-slate-900">Admin Panel</h1>
+          <header className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 md:hidden">
+             <div className="flex items-center space-x-3">
+               <a href="/" className="p-2 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-colors">
+                 <ArrowLeft className="w-5 h-5" />
+               </a>
+               <h1 className="text-2xl font-extrabold text-slate-900">Admin Panel</h1>
+             </div>
              <div className="flex space-x-2 border border-slate-200 p-1 rounded-lg bg-white">
                <button onClick={() => setActiveTab('upload')} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'upload' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500'}`}>Upload</button>
                <button onClick={() => setActiveTab('analytics')} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'analytics' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500'}`}>Analytics</button>
