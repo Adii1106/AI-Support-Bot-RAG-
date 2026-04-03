@@ -10,17 +10,25 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'upload' | 'analytics'>('upload');
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchDocuments = async () => {
     try {
       setIsLoadingDocs(true);
-      const res = await fetch('/api/documents');
+      setFetchError(null);
+      // Added cache-buster to prevent stale empty results
+      const res = await fetch(`/api/documents?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
+        if (data.error) throw new Error(data.error);
         setDocuments(data.documents || []);
+      } else {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to fetch");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch documents", err);
+      setFetchError(err.message);
     } finally {
       setIsLoadingDocs(false);
     }
@@ -55,10 +63,11 @@ export default function AdminDashboard() {
       if (res.ok) {
         setUploadStatus('success');
         setFile(null);
-        fetchDocuments();
+        // Small delay to ensure DB secondary indexes are updated
         setTimeout(() => {
+          fetchDocuments();
           alert("🎉 Document trained successfully!\n\nYou can now return to the Home page and ask the chat widget questions about this document.");
-        }, 100);
+        }, 500);
       } else {
         setUploadStatus('error');
       }
@@ -205,6 +214,13 @@ export default function AdminDashboard() {
                   {isLoadingDocs ? (
                     <div className="flex justify-center p-4">
                       <div className="animate-spin h-5 w-5 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
+                    </div>
+                  ) : fetchError ? (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center text-sm text-red-600">
+                      <AlertCircle className="w-4 h-4 mx-auto mb-2" />
+                      <strong>Error:</strong> {fetchError}
+                      <p className="mt-1 text-xs text-red-500">Ensure your `.env.local` has a valid `BACKEND_URL` pointing to the Python server.</p>
+                      <button onClick={fetchDocuments} className="mt-3 text-xs font-bold underline">Retry Connection</button>
                     </div>
                   ) : documents.length === 0 ? (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-sm text-slate-500">
