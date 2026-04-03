@@ -29,9 +29,10 @@ app.add_middleware(
 )
 
 # Initialize clients securely (stripping hidden newlines/spaces)
-supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "").strip()
-supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
-groq_key = os.getenv("GROQ_API_KEY", "").strip()
+# Adding fallbacks for different hosting platform naming (Vercel uses SUPABASE_URL often)
+supabase_url = (os.getenv("NEXT_PUBLIC_SUPABASE_URL") or os.getenv("SUPABASE_URL") or "").strip()
+supabase_key = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
 
 supabase: Client = create_client(supabase_url, supabase_key)
 groq = Groq(api_key=groq_key)
