@@ -7,11 +7,21 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 font-sans text-center">
       <div className="max-w-2xl">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-6">
-          AI Customer Support Prototype
+          AI Agentic Support System
         </h1>
-        <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-          This is the sample "Customer Facing" page. The floating chat widget in the bottom right corner represents how this tool would be embedded on a real company website.
+        <p className="text-lg text-slate-600 mb-6 leading-relaxed">
+          A production-ready RAG architecture built with <strong>Next.js, FastAPI, Supabase (pgvector), and Llama 3.3</strong>.
         </p>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 text-left mb-8 shadow-sm">
+          <h2 className="text-xl font-bold text-slate-800 mb-3 hover:text-indigo-600 transition-colors">How to test this prototype:</h2>
+          <ol className="list-decimal list-inside text-slate-600 space-y-3">
+            <li>Go to the <strong>Admin Dashboard</strong> and upload a PDF/TXT file (e.g., a company manual).</li>
+            <li>Wait for the backend to chunk, embed, and store the document in the vector database.</li>
+            <li>Click <strong>Try the Chat Widget</strong> below to open the support window.</li>
+            <li>Ask questions! The AI will answer exclusively based on your uploaded document to prevent hallucinations.</li>
+          </ol>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a href="/admin" className="px-6 py-3 bg-white border border-slate-200 hover:border-indigo-300 shadow-sm rounded-xl text-indigo-600 font-semibold transition-all">
