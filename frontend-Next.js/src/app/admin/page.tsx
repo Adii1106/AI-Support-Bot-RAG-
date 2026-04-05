@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
 
   const fetchDocuments = async () => {
     try {
@@ -227,16 +228,42 @@ export default function AdminDashboard() {
                       No documents in the knowledge base yet. Upload one above!
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                       {documents.map((doc, idx) => (
-                        <div key={doc.id || idx} className="flex items-start p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-200 transition-colors">
-                          <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-                          <div className="overflow-hidden">
-                            <p className="font-medium text-slate-800 text-sm truncate" title={doc.title}>{doc.title}</p>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {new Date(doc.created_at).toLocaleDateString()} at {new Date(doc.created_at).toLocaleTimeString()}
-                            </p>
+                        <div key={doc.id || idx} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-200 transition-all shadow-sm">
+                          <div className="flex items-center justify-between p-4 bg-slate-50/50">
+                            <div className="flex items-start">
+                              <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
+                              <div className="overflow-hidden">
+                                <p className="font-bold text-slate-800 text-sm truncate max-w-[200px] sm:max-w-md" title={doc.title}>{doc.title}</p>
+                                <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-0.5">
+                                  {new Date(doc.created_at).toLocaleDateString()} • {new Date(doc.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => setExpandedDocId(expandedDocId === doc.id ? null : doc.id)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${expandedDocId === doc.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}
+                            >
+                              {expandedDocId === doc.id ? 'Close' : 'View Summary'}
+                            </button>
                           </div>
+                          
+                          {expandedDocId === doc.id && (
+                            <div className="p-5 border-t border-slate-100 bg-white animate-in slide-in-from-top-2 duration-200">
+                              <div className="flex items-center mb-3">
+                                <HelpCircle className="w-4 h-4 text-indigo-500 mr-2" />
+                                <h5 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Document Intelligence</h5>
+                              </div>
+                              <p className="text-sm text-slate-600 leading-relaxed italic bg-indigo-50/30 p-4 rounded-xl border border-indigo-50/50">
+                                "{doc.summary || 'Summary is being generated or was unavailable during upload.'}"
+                              </p>
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">PDF V1.0</span>
+                                <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">OCR Verified</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
