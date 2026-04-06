@@ -19,7 +19,7 @@ export async function POST(req: Request) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, history }),
             cache: 'no-store',
-            signal: AbortSignal.timeout(8000) // 8 second timeout
+            signal: AbortSignal.timeout(30000) // 30 second timeout
         });
 
         if (!response.ok) {
