@@ -31,10 +31,12 @@ app.add_middleware(
 )
 
 # Initialize clients securely (stripping hidden newlines/spaces)
-# Adding fallbacks for different hosting platform naming (Vercel uses SUPABASE_URL often)
 supabase_url = (os.getenv("NEXT_PUBLIC_SUPABASE_URL") or os.getenv("SUPABASE_URL") or "").strip()
 supabase_key = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
 groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
+
+print(f"Supabase URL: {supabase_url[:15]}...")
+print(f"Groq API Key detected: {'Yes' if groq_key else 'No'}")
 
 supabase: Client = create_client(supabase_url, supabase_key)
 groq = Groq(api_key=groq_key)
@@ -76,12 +78,18 @@ async def startup_event():
 
 async def generate_summary(text: str) -> str:
     """Generates a high-level summary of the document for global context."""
+    if not groq_key:
+        return "Summary unavailable (GROQ_API_KEY missing)."
     try:
-        # Take just the first 8000 characters to avoid exceeding context limits for the summary
-        preview_text = text[:8000] 
-        prompt = f"""Summarize the following document in about 150-200 words. 
-Focus on the main purpose, key sections, and what kind of questions this document can answer.
-Keep it professional and concise.
+        # Take up to 10,000 characters for a more comprehensive overview
+        preview_text = text[:10000] 
+        prompt = f"""Summarize the following document content in about 150-200 words. 
+Focus on:
+1. The main purpose of the document.
+2. Key sections or topics covered.
+3. Specific types of questions this document is best equipped to answer.
+
+Keep it structured and professional. Use the first person (e.g. 'This document describes...') is fine.
 
 DOCUMENT TEXT:
 {preview_text}
@@ -90,12 +98,13 @@ DOCUMENT TEXT:
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
-            max_tokens=300
+            max_tokens=500
         )
-        return response.choices[0].message.content
+        summary = response.choices[0].message.content.strip()
+        return summary if summary else "Summary could not be generated."
     except Exception as e:
         print(f"Summarization error: {e}")
-        return "Summary unavailable."
+        return f"Summary unavailable: {str(e)[:50]}"
 
 class ChatRequest(BaseModel):
     prompt: str
@@ -143,19 +152,20 @@ async def upload_document(file: UploadFile = File(...)):
         res = supabase.table("documents").insert(doc_data).execute()
         document_id = res.data[0]["id"]
 
-        # 3. Process chunks and generate embeddings
-        chunk_records = []
-        print(f"Processing {len(chunks)} chunks...")
+        # 3. Process chunks and generate embeddings in BATCH (10x faster)
+        print(f"Generating embeddings for {len(chunks)} chunks...")
         start_time = time.time()
         
-        for chunk in chunks:
-            # Python 3.8 Compatibility: use run_in_executor instead of to_thread
-            loop = asyncio.get_event_loop()
-            embedding = await loop.run_in_executor(None, model.encode, chunk)
+        loop = asyncio.get_event_loop()
+        # Batch encode is much more efficient than looping per chunk
+        embeddings = await loop.run_in_executor(None, lambda: model.encode(chunks))
+        
+        chunk_records = []
+        for i, chunk in enumerate(chunks):
             chunk_records.append({
                 "document_id": document_id,
                 "content": chunk,
-                "embedding": embedding.tolist(),
+                "embedding": embeddings[i].tolist(),
                 "metadata": {"parent_title": file.filename}
             })
 
