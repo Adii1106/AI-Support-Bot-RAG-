@@ -1,211 +1,203 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2, RotateCw } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Loader2, RotateCw } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
 type Message = {
-    role: 'user' | 'assistant';
-    content: string;
+  role: 'user' | 'assistant';
+  content: string;
 };
 
 export default function ChatWidget() {
-    const [isOpen, setIsOpen] = useState(false);
-    const [input, setInput] = useState('');
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isStreaming, setIsStreaming] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll whenever messages change
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages, isStreaming]);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isStreaming]);
 
-    const handleClear = () => {
-        setMessages([]);
-        setInput('');
-    };
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener('open-chat-widget', open);
+    return () => window.removeEventListener('open-chat-widget', open);
+  }, []);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
+  const handleClear = () => {
+    setMessages([]);
+    setInput('');
+  };
 
-        const userMessage: Message = { role: 'user', content: input };
-        setMessages((prev) => [...prev, userMessage]);
-        setInput('');
-        setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
 
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: input,
-                    history: messages
-                }),
-            });
+    const prompt = input;
+    const userMessage: Message = { role: 'user', content: prompt };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Server error');
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, history: messages }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Server error');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader');
+
+      setIsLoading(false);
+      setIsStreaming(true);
+      let assistantContent = '';
+      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split('\n')) {
+          if (line.startsWith('data: ')) {
+            const dataLine = line.slice(6);
+            if (dataLine === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(dataLine);
+              if (parsed.text) {
+                assistantContent += parsed.text;
+                setMessages((prev) => {
+                  const next = [...prev];
+                  next[next.length - 1] = { ...next[next.length - 1], content: assistantContent };
+                  return next;
+                });
+              }
+            } catch {
+              /* partial json */
             }
-
-            const reader = response.body?.getReader();
-            if (!reader) throw new Error('No reader');
-
-            setIsLoading(false);
-            setIsStreaming(true);
-
-            let assistantContent = "";
-            setMessages((prev) => [...prev, { role: 'assistant', content: "" }]);
-
-            const decoder = new TextDecoder();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const dataLine = line.slice(6);
-                        if (dataLine === '[DONE]') continue;
-                        try {
-                            const parsed = JSON.parse(dataLine);
-                            if (parsed.text) {
-                                assistantContent += parsed.text;
-                                setMessages((prev) => {
-                                    const next = [...prev];
-                                    next[next.length - 1] = {
-                                        ...next[next.length - 1],
-                                        content: assistantContent
-                                    };
-                                    return next;
-                                });
-                            }
-                        } catch (e) { /* partial json */ }
-                    }
-                }
-            }
-        } catch (error: any) {
-            console.error('Chat error:', error);
-            setMessages((prev) => [...prev, { role: 'assistant', content: `🚨 ${error.message}` }]);
-        } finally {
-            setIsLoading(false);
-            setIsStreaming(false);
+          }
         }
-    };
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Error: ${msg}` }]);
+    } finally {
+      setIsLoading(false);
+      setIsStreaming(false);
+    }
+  };
 
-    return (
-        <div className="fixed bottom-6 right-6 z-50 font-sans antialiased text-slate-900">
-            {/* The actual chat window */}
-            {isOpen && (
-                <div className="bg-white bottom-20 right-0 fixed sm:absolute w-[calc(100vw-3rem)] sm:w-[420px] h-[600px] max-h-[calc(100vh-8rem)] rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-                    
-                    {/* Header with clear button */}
-                    <header className="p-5 bg-indigo-600 text-white flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-white/10 rounded-xl">
-                                <Bot className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold tracking-tight">AI Support</h3>
-                                <div className="flex items-center text-xs opacity-80">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 mr-1.5 animate-pulse" />
-                                    Online
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                            <button onClick={handleClear} className="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Clear Chat">
-                                <RotateCw className="w-5 h-5" />
-                            </button>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* Chat history section */}
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
-                        {messages.length === 0 && (
-                            <div className="flex flex-col items-center justify-center h-full text-center space-y-3 px-4">
-                                <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-500">
-                                    <Bot className="w-8 h-8" />
-                                </div>
-                                <h4 className="font-bold text-slate-800">Hello there!</h4>
-                                <p className="text-sm text-slate-500 leading-relaxed">
-                                    Ask me anything about our services. I've been trained on the latest documentation.
-                                </p>
-                            </div>
-                        )}
-
-                        {messages.map((m, i) => (
-                            <div key={i} className={cn("flex flex-col", m.role === 'user' ? "items-end" : "items-start")}>
-                                <div className={cn(
-                                    "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed shadow-sm break-words",
-                                    m.role === 'user' 
-                                        ? "bg-indigo-600 text-white rounded-tr-none" 
-                                        : "bg-slate-50 text-slate-700 border border-slate-100 rounded-tl-none"
-                                )}>
-                                    {m.content}
-                                </div>
-                            </div>
-                        ))}
-
-                        {isLoading && (
-                            <div className="flex items-start space-x-2">
-                                <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
-                                    <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* input area */}
-                    <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-slate-100">
-                        <div className="relative group">
-                            <input
-                                autoFocus
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Type your question..."
-                                className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50 items-center justify-center transition-all p-4 pr-14 rounded-2xl text-sm outline-none placeholder:text-slate-400 disabled:opacity-50"
-                                disabled={isLoading || isStreaming}
-                            />
-                            <button 
-                                type="submit" 
-                                disabled={!input.trim() || isLoading || isStreaming}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-30 transition-all active:scale-95"
-                            >
-                                <Send className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <p className="text-[10px] text-center text-slate-400 mt-3 font-medium uppercase tracking-widest">
-                            Built with Llama 3 & RAG
-                        </p>
-                    </form>
+  return (
+    <div className="fixed bottom-6 right-6 z-layer-chat font-body antialiased pointer-events-none">
+      <div className="pointer-events-auto relative">
+        {isOpen && (
+          <div
+            role="dialog"
+            aria-label="Support chat"
+            className="absolute bottom-20 right-0 w-[min(100vw-3rem,420px)] h-[min(600px,calc(100vh-7rem))] rounded-2xl flex flex-col overflow-hidden cleo-panel border-[var(--accent-cyan)]/20 shadow-[0_0_40px_var(--glow-cyan)]"
+          >
+            <header className="p-4 border-b border-[var(--border-subtle)] flex items-center justify-between bg-gradient-to-r from-[color-mix(in_srgb,var(--accent-cyan)_12%,transparent)] to-[color-mix(in_srgb,var(--accent-violet)_12%,transparent)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent-cyan)] to-[var(--accent-violet)] flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-[#06060a]" />
                 </div>
-            )}
-
-            {/* The toggle button */}
-            {!isOpen && (
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="p-5 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-300 hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all duration-300 group"
-                >
-                    <MessageSquare className="w-7 h-7 group-hover:rotate-12 transition-transform" />
+                <div>
+                  <h3 className="font-display font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                    Support AI
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] glow-pulse" />
+                  </h3>
+                  <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">Grounded in your docs</p>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <button type="button" onClick={handleClear} className="p-2 rounded-lg hover:bg-white/5 text-[var(--text-muted)] cursor-pointer" title="Clear">
+                  <RotateCw className="w-4 h-4" />
                 </button>
-            )}
-        </div>
-    );
+                <button type="button" onClick={() => setIsOpen(false)} className="p-2 rounded-lg hover:bg-white/5 text-[var(--text-muted)] cursor-pointer">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </header>
+
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-[color-mix(in_srgb,var(--background)_90%,transparent)]">
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                  <Bot className="w-10 h-10 text-[var(--accent-cyan)] mb-3 opacity-60" />
+                  <h4 className="font-display font-bold text-[var(--text-primary)]">Ask anything</h4>
+                  <p className="text-xs text-[var(--text-muted)] mt-2 max-w-[260px]">
+                    Answers come only from your uploaded documentation.
+                  </p>
+                </div>
+              )}
+              {messages.map((m, i) => (
+                <div key={i} className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                  <div
+                    className={cn(
+                      'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+                      m.role === 'user'
+                        ? 'bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-violet)] text-[#06060a] rounded-br-md font-medium'
+                        : 'bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] rounded-bl-md'
+                    )}
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {isLoading && <Loader2 className="w-5 h-5 animate-spin text-[var(--accent-cyan)]" />}
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-4 border-t border-[var(--border-subtle)]">
+              <div className="relative">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type a message…"
+                  className="w-full bg-[var(--cleo-cream-dark)] border border-[var(--border-subtle)] rounded-xl py-3 pl-4 pr-12 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-cyan)] placeholder:text-[var(--text-muted)]"
+                  disabled={isLoading || isStreaming}
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isLoading || isStreaming}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-violet)] text-[#06060a] disabled:opacity-30 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <button
+          type="button"
+          data-chat-trigger
+          onClick={() => setIsOpen((o) => !o)}
+          aria-label={isOpen ? 'Close chat' : 'Open chat'}
+          className={cn(
+            'p-5 rounded-full shadow-[0_0_30px_var(--glow-cyan)] spring-transition cursor-pointer border-0',
+            isOpen
+              ? 'bg-[var(--surface-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)]'
+              : 'bg-gradient-to-br from-[var(--accent-cyan)] to-[var(--accent-violet)] text-[#06060a]'
+          )}
+        >
+          {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+        </button>
+      </div>
+    </div>
+  );
 }

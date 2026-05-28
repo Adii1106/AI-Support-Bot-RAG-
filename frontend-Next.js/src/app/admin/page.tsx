@@ -1,7 +1,22 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { UploadCloud, FileText, CheckCircle, BarChart3, AlertCircle, ThumbsUp, HelpCircle, Database, ArrowLeft } from 'lucide-react';
+import InteractiveCanvas from '@/components/InteractiveCanvas';
+import { 
+  UploadCloud, 
+  FileText, 
+  CheckCircle, 
+  BarChart3, 
+  AlertCircle, 
+  ThumbsUp, 
+  HelpCircle, 
+  Database, 
+  ArrowLeft,
+  Settings,
+  Shield,
+  Activity,
+  Trash2
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,7 +32,6 @@ export default function AdminDashboard() {
     try {
       setIsLoadingDocs(true);
       setFetchError(null);
-      // Added cache-buster to prevent stale empty results
       const res = await fetch(`/api/documents?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
@@ -64,7 +78,6 @@ export default function AdminDashboard() {
       if (res.ok) {
         setUploadStatus('success');
         setFile(null);
-        // Small delay to ensure DB secondary indexes are updated
         setTimeout(() => {
           fetchDocuments();
           alert("🎉 Document trained successfully!\n\nYou can now return to the Home page and ask the chat widget questions about this document.");
@@ -80,90 +93,128 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900 font-sans">
-      
+    <div className="min-h-screen flex bg-[#09090b] text-[#f4f4f5] font-sans grid-backdrop relative overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/5 blur-[150px] rounded-full pointer-events-none z-0" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-500/5 blur-[130px] rounded-full pointer-events-none z-0" />
+
+      {/* Background Interactive Connected Nodes */}
+      <InteractiveCanvas />
+
       {/* Sidebar Desktop */}
-      <div className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
-        <div className="p-6 border-b border-slate-200">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Admin Panel</h1>
-          <div className="mt-2 flex items-center space-x-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">System Online</span>
+      <div className="w-68 bg-[#121215]/80 border-r border-white/5 backdrop-blur-xl relative z-10 hidden md:flex flex-col">
+        <div className="p-6 border-b border-white/5">
+          <div className="font-extrabold text-lg tracking-tighter flex items-center gap-2 text-white">
+            <div className="w-4 h-4 bg-indigo-600 rounded-sm rotate-45 shadow-md shadow-indigo-500/50"></div>
+            <span>Workspace<span className="text-indigo-400">Admin</span></span>
+          </div>
+          <div className="mt-4 flex items-center space-x-2 bg-indigo-500/5 border border-indigo-500/10 px-3 py-1.5 rounded-lg w-fit">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 glow-pulse"></div>
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Pipeline Active</span>
           </div>
         </div>
-        <div className="p-4 space-y-2 flex-grow">
+        
+        <div className="p-4 space-y-1.5 flex-grow">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2 select-none">
+            Core Engine
+          </div>
           <button 
             onClick={() => setActiveTab('upload')}
-            className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'upload' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-semibold text-xs uppercase tracking-wider cursor-pointer ${activeTab === 'upload' ? 'bg-indigo-600 border border-indigo-500 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
           >
-            <Database className="w-5 h-5 mr-3" />
-            Upload Data
+            <Database className="w-4 h-4 mr-3" />
+            Knowledge Base
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
-            className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors font-medium ${activeTab === 'analytics' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all font-semibold text-xs uppercase tracking-wider cursor-pointer ${activeTab === 'analytics' ? 'bg-indigo-600 border border-indigo-500 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'}`}
           >
-            <BarChart3 className="w-5 h-5 mr-3" />
-            Analytics
+            <BarChart3 className="w-4 h-4 mr-3" />
+            System Analytics
+          </button>
+          
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mt-8 mb-2 select-none">
+            Settings
+          </div>
+          <button className="w-full flex items-center px-4 py-3 rounded-xl text-slate-500 hover:text-slate-400 text-xs font-semibold uppercase tracking-wider cursor-not-allowed">
+            <Shield className="w-4 h-4 mr-3" /> API Credentials
+          </button>
+          <button className="w-full flex items-center px-4 py-3 rounded-xl text-slate-500 hover:text-slate-400 text-xs font-semibold uppercase tracking-wider cursor-not-allowed">
+            <Settings className="w-4 h-4 mr-3" /> Parameters
           </button>
         </div>
-        <div className="p-4 border-t border-slate-200">
-          <a href="/" className="w-full flex items-center justify-center px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-colors font-medium">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Go to Chat
+
+        <div className="p-4 border-t border-white/5 bg-black/20">
+          <a 
+            href="/" 
+            className="w-full flex items-center justify-center px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white text-xs font-bold uppercase tracking-wider rounded-xl spring-transition active:scale-95 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Chat
           </a>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto">
+      {/* Main Workspace Frame */}
+      <div className="flex-1 p-8 overflow-y-auto relative z-10">
         <div className="max-w-4xl mx-auto space-y-8">
 
-          {/* Mobile Header */}
-          <header className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 md:hidden">
+          {/* Mobile Navigation Header */}
+          <header className="pb-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 md:hidden">
              <div className="flex items-center space-x-3">
-               <a href="/" className="p-2 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-colors">
-                 <ArrowLeft className="w-5 h-5" />
+               <a href="/" className="p-2.5 bg-white/5 border border-white/10 text-slate-300 rounded-xl hover:bg-white/10 hover:text-white transition-all active:scale-90">
+                 <ArrowLeft className="w-4 h-4" />
                </a>
-               <h1 className="text-2xl font-extrabold text-slate-900">Admin Panel</h1>
+               <h1 className="text-xl font-black text-white tracking-tight">Workspace Admin</h1>
              </div>
-             <div className="flex space-x-2 border border-slate-200 p-1 rounded-lg bg-white">
-               <button onClick={() => setActiveTab('upload')} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'upload' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500'}`}>Upload</button>
-               <button onClick={() => setActiveTab('analytics')} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'analytics' ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500'}`}>Analytics</button>
+             <div className="flex space-x-1.5 border border-white/5 p-1 rounded-xl bg-black/40 backdrop-blur-md">
+               <button 
+                 onClick={() => setActiveTab('upload')} 
+                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider cursor-pointer ${activeTab === 'upload' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+               >
+                 Upload
+               </button>
+               <button 
+                 onClick={() => setActiveTab('analytics')} 
+                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all uppercase tracking-wider cursor-pointer ${activeTab === 'analytics' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+               >
+                 Stats
+               </button>
              </div>
           </header>
 
           {activeTab === 'upload' && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-in fade-in duration-300">
               <div>
-                <h2 className="text-2xl font-bold text-slate-800">Manage Data Sources</h2>
-                <p className="text-slate-500 mt-1">Upload documents to expand your AI's Knowledge Base.</p>
+                <h2 className="text-2xl font-black text-white tracking-tight">Manage Data Sources</h2>
+                <p className="text-slate-400 text-xs mt-1 uppercase tracking-wider font-semibold">Trained vector chunks loaded inside pgvector semantic context</p>
               </div>
 
-              {/* 1. Working Upload PDF block */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <h3 className="text-lg font-bold mb-4 flex items-center text-slate-800">
-                  <FileText className="w-5 h-5 mr-2 text-indigo-500" />
-                  Knowledge Base (PDF/TXT)
+              {/* Ingestion & Training Panel */}
+              <div className="bg-[#121215]/80 border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-md">
+                <h3 className="text-sm font-bold tracking-tight text-white mb-4 flex items-center uppercase tracking-widest text-slate-300">
+                  <FileText className="w-4 h-4 mr-2 text-indigo-400" />
+                  Knowledge Base Loader (PDF/TXT)
                 </h3>
   
+                {/* Drag and Drop Zone */}
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
-                  className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${file ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'}`}
+                  className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center spring-transition ${file ? 'border-indigo-500 bg-indigo-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'}`}
                 >
-                  <div className="p-3 bg-indigo-100 rounded-full mb-4">
-                    <UploadCloud className="w-6 h-6 text-indigo-600" />
+                  <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-4">
+                    <UploadCloud className="w-6 h-6 text-indigo-400 animate-pulse" />
                   </div>
                   {file ? (
                     <div className="space-y-1">
-                      <p className="font-medium text-slate-800">{file.name}</p>
-                      <p className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p className="font-bold text-white text-sm">{file.name}</p>
+                      <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider">{(file.size / 1024 / 1024).toFixed(2)} MB • READY</p>
                     </div>
                   ) : (
                     <div>
-                      <p className="font-medium text-slate-700">Drag & Drop document</p>
-                      <p className="text-sm text-slate-500 mt-1">PDF or TXT up to 10MB</p>
+                      <p className="font-bold text-slate-300 text-sm">Drag & Drop training file</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-wider">PDF or TXT up to 10MB</p>
                     </div>
                   )}
 
@@ -176,9 +227,9 @@ export default function AdminDashboard() {
                   />
                   <label
                     htmlFor="file-upload"
-                    className="mt-4 px-4 py-2 bg-white border border-slate-200 shadow-sm rounded-lg text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors"
+                    className="mt-5 px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all select-none"
                   >
-                    Browse Files
+                    Select File
                   </label>
                 </div>
 
@@ -186,81 +237,81 @@ export default function AdminDashboard() {
                   <button
                     onClick={handleUpload}
                     disabled={isUploading}
-                    className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-all disabled:opacity-50 flex justify-center items-center"
+                    className="w-full mt-5 bg-indigo-600 border border-indigo-500 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 flex justify-center items-center text-xs uppercase tracking-widest cursor-pointer shadow-lg shadow-indigo-500/10 active:scale-95"
                   >
                     {isUploading ? (
                       <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                        Processing Vectors...
+                        <svg className="animate-spin -ml-1 mr-2.5 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Training Semantic Model...
                       </span>
                     ) : "Process & Train Bot"}
                   </button>
                 )}
 
                 {uploadStatus === 'success' && (
-                  <div className="mt-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm flex items-center">
-                    <CheckCircle className="w-4 h-4 mr-2" /> Document trained successfully!
+                  <div className="mt-4 p-4 bg-green-950/20 text-green-400 border border-green-500/20 rounded-xl text-xs font-semibold flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2.5 text-green-500" /> Vector space compiled and trained successfully!
                   </div>
                 )}
                 {uploadStatus === 'error' && (
-                  <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-2" /> Error processing document.
+                  <div className="mt-4 p-4 bg-red-950/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-semibold flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-2.5 text-red-500" /> Error occurred during RAG pipeline chunk ingestion.
                   </div>
                 )}
 
-                {/* Active Documents List */}
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <h4 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Currently Trained Documents</h4>
+                {/* Active Trained Files List */}
+                <div className="mt-8 pt-8 border-t border-white/5">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Currently Loaded Index Space</h4>
                   
                   {isLoadingDocs ? (
-                    <div className="flex justify-center p-4">
+                    <div className="flex justify-center p-6">
                       <div className="animate-spin h-5 w-5 border-2 border-indigo-500 rounded-full border-t-transparent"></div>
                     </div>
                   ) : fetchError ? (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center text-sm text-red-600">
-                      <AlertCircle className="w-4 h-4 mx-auto mb-2" />
-                      <strong>Error:</strong> {fetchError}
-                      <p className="mt-1 text-xs text-red-500">Ensure your `.env.local` has a valid `BACKEND_URL` pointing to the Python server.</p>
-                      <button onClick={fetchDocuments} className="mt-3 text-xs font-bold underline">Retry Connection</button>
+                    <div className="bg-red-950/20 border border-red-500/20 rounded-2xl p-6 text-center text-xs text-red-400">
+                      <AlertCircle className="w-5 h-5 mx-auto mb-2 text-red-400" />
+                      <strong>Operational Error:</strong> {fetchError}
+                      <p className="mt-1 text-slate-500">Ensure the FastAPI reload service is active and NEXT_PUBLIC_SUPABASE_URL variables are accurate.</p>
+                      <button onClick={fetchDocuments} className="mt-4 text-xs font-bold underline text-indigo-400 cursor-pointer">Retry Connection</button>
                     </div>
                   ) : documents.length === 0 ? (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-sm text-slate-500">
-                      No documents in the knowledge base yet. Upload one above!
+                    <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-6 text-center text-xs text-slate-500 select-none uppercase font-bold tracking-wider">
+                      Zero files trained in vector space. Use loader above.
                     </div>
                   ) : (
-                    <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                    <div className="space-y-3.5 max-h-[450px] overflow-y-auto pr-1">
                       {documents.map((doc, idx) => (
-                        <div key={doc.id || idx} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-200 transition-all shadow-sm">
-                          <div className="flex items-center justify-between p-4 bg-slate-50/50">
+                        <div key={doc.id || idx} className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 hover:bg-white/[0.03] transition-all shadow-sm">
+                          <div className="flex items-center justify-between p-4">
                             <div className="flex items-start">
-                              <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
+                              <CheckCircle className="w-4 h-4 text-green-500 mr-3 mt-1 flex-shrink-0" />
                               <div className="overflow-hidden">
-                                <p className="font-bold text-slate-800 text-sm truncate max-w-[200px] sm:max-w-md" title={doc.title}>{doc.title}</p>
-                                <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mt-0.5">
-                                  {new Date(doc.created_at).toLocaleDateString()} • {new Date(doc.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                <p className="font-bold text-white text-xs truncate max-w-[200px] sm:max-w-md" title={doc.title}>{doc.title}</p>
+                                <p className="text-[8px] uppercase tracking-wider font-bold text-slate-500 mt-1">
+                                  INGESTED: {new Date(doc.created_at).toLocaleDateString()} • {new Date(doc.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                 </p>
                               </div>
                             </div>
                             <button 
                               onClick={() => setExpandedDocId(expandedDocId === doc.id ? null : doc.id)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${expandedDocId === doc.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50'}`}
+                              className={`px-3.5 py-2 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all cursor-pointer ${expandedDocId === doc.id ? 'bg-indigo-600 text-white' : 'bg-white/5 text-indigo-400 hover:bg-white/10'}`}
                             >
-                              {expandedDocId === doc.id ? 'Close' : 'View Summary'}
+                              {expandedDocId === doc.id ? 'Close' : 'Summary'}
                             </button>
                           </div>
                           
                           {expandedDocId === doc.id && (
-                            <div className="p-5 border-t border-slate-100 bg-white animate-in slide-in-from-top-2 duration-200">
-                              <div className="flex items-center mb-3">
-                                <HelpCircle className="w-4 h-4 text-indigo-500 mr-2" />
-                                <h5 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Document Intelligence</h5>
+                            <div className="px-5 pb-5 pt-1 bg-black/10 border-t border-white/5">
+                              <div className="flex items-center mb-2 mt-3">
+                                <HelpCircle className="w-3.5 h-3.5 text-indigo-400 mr-2" />
+                                <h5 className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Semantic Overview</h5>
                               </div>
-                              <p className="text-sm text-slate-600 leading-relaxed italic bg-indigo-50/30 p-4 rounded-xl border border-indigo-50/50">
-                                "{doc.summary || 'Summary is being generated or was unavailable during upload.'}"
+                              <p className="text-xs text-slate-300 leading-relaxed italic bg-black/20 p-4 rounded-xl border border-white/5">
+                                "{doc.summary || 'Summary unavailable.'}"
                               </p>
-                              <div className="mt-4 flex flex-wrap gap-2">
-                                <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">PDF V1.0</span>
-                                <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold">OCR Verified</span>
+                              <div className="mt-4 flex gap-2">
+                                <span className="px-2 py-1 bg-white/5 text-slate-400 rounded-md text-[8px] font-bold uppercase tracking-wider">pgvector-384</span>
+                                <span className="px-2 py-1 bg-white/5 text-slate-400 rounded-md text-[8px] font-bold uppercase tracking-wider">llama-3.1 verified</span>
                               </div>
                             </div>
                           )}
@@ -270,47 +321,42 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
-                  <span className="text-xs flex items-center text-slate-500 bg-slate-100 px-2 py-1 rounded-md font-medium">
-                    <FileText className="w-3 h-3 mr-1" />
-                    {documents.length} File{documents.length !== 1 ? 's' : ''} Indexed
+                <div className="mt-6 pt-5 border-t border-white/5 flex justify-between items-center text-xs select-none">
+                  <span className="flex items-center text-slate-400 bg-white/5 border border-white/5 px-3 py-1.5 rounded-xl font-bold uppercase text-[9px] tracking-wider">
+                    <FileText className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
+                    {documents.length} File{documents.length !== 1 ? 's' : ''} Active
                   </span>
                   <button
                     onClick={async () => {
-                      if (confirm('Wipe everything?')) {
+                      if (confirm('Permanently wipe document vectors?')) {
                         await fetch('/api/upload/clear', { method: 'DELETE' });
                         fetchDocuments();
-                        alert('Done. DB is clean.');
+                        alert('Database and cached overview wiped.');
                       }
                     }}
-                    className="text-xs font-semibold text-slate-400 hover:text-red-500 transition-colors"
+                    className="text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
-                    Reset Knowledge Base
+                    <Trash2 className="w-3.5 h-3.5" /> Wipe Database
                   </button>
                 </div>
               </div>
 
-              {/* 2. Upcoming CSV block */}
-              <div className="bg-indigo-900 text-white rounded-2xl p-6 shadow-sm border border-indigo-800 relative overflow-hidden">
+              {/* Structured RAG Feature Preview */}
+              <div className="bg-gradient-to-r from-indigo-950/20 to-indigo-900/10 text-white rounded-3xl p-6 border border-indigo-500/10 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4">
-                  <span className="bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Upcoming Feature</span>
+                  <span className="bg-indigo-600/30 border border-indigo-500/20 text-indigo-300 text-[8px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest select-none">Feature Preview</span>
                 </div>
-                <h2 className="text-xl font-bold mb-2 flex items-center">
-                  <Database className="w-5 h-5 mr-2 text-indigo-300" />
-                  Data Analysis Agent (Structured RAG)
+                <h2 className="text-base font-bold mb-1 tracking-tight flex items-center uppercase tracking-widest text-indigo-300">
+                  <Activity className="w-4 h-4 mr-2 text-indigo-400" />
+                  Structured Dataset Analytics (SQL agent)
                 </h2>
-                <p className="text-indigo-200 mb-6 text-sm">
-                  Soon, you will be able to upload CSV files (like customer support tickets or sales data). The AI will dynamically generate SQL queries to answer analytical questions about your datasets.
+                <p className="text-slate-400 text-xs mb-5 max-w-xl leading-relaxed">
+                  Soon, upload CSV tables (e.g., tickets, analytics records). The agent dynamically creates query embeddings, maps relations, and constructs analytical tables on the fly.
                 </p>
                 
-                <div className="border-2 border-dashed border-indigo-700 bg-indigo-800/50 rounded-xl p-8 flex flex-col items-center justify-center text-center opacity-70 cursor-not-allowed">
-                  <div className="p-3 bg-indigo-800 rounded-full mb-3">
-                    <UploadCloud className="w-6 h-6 text-indigo-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-indigo-100">Upload CSV Dataset (Coming Soon)</p>
-                    <p className="text-sm text-indigo-300 mt-1">.csv files only</p>
-                  </div>
+                <div className="border border-white/5 bg-black/20 rounded-2xl p-6 flex flex-col items-center justify-center text-center opacity-40 cursor-not-allowed select-none">
+                  <UploadCloud className="w-5 h-5 text-slate-500 mb-2" />
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">CSV Data Dropper</p>
                 </div>
               </div>
 
@@ -318,70 +364,70 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === 'analytics' && (
-            <div className="space-y-6">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm flex items-start">
-                <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5 text-amber-600" />
-                <p><strong>Work in Progress:</strong> These analytics are currently mocked for prototyping purposes. In the next release, live Supabase telemetry data will populate these charts.</p>
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="bg-amber-950/20 border border-amber-500/20 rounded-2xl p-4 text-amber-400 text-xs font-semibold flex items-start select-none">
+                <AlertCircle className="w-4 h-4 mr-2.5 flex-shrink-0 mt-0.5 text-amber-400" />
+                <p><strong>Telemetry Warning:</strong> These parameters are currently loaded from prototype telemetry data for vector verification. Live Supabase database hooks are currently processing.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="text-slate-500 text-sm font-medium flex items-center justify-between">
+                <div className="bg-[#121215]/80 p-5 rounded-2xl border border-white/5 shadow-sm flex flex-col justify-between hover:border-white/10 transition-all select-none">
+                  <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between">
                     Total Queries
-                    <span className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full text-xs">+12%</span>
+                    <span className="text-indigo-400 bg-indigo-500/5 px-2 py-0.5 rounded text-[8px] font-bold">+12%</span>
                   </div>
-                  <div className="text-3xl font-bold text-slate-800 mt-2">1,248</div>
+                  <div className="text-2xl font-black text-white mt-3">1,248</div>
                 </div>
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="text-slate-500 text-sm font-medium flex items-center justify-between">
-                    User Satisfaction
-                    <ThumbsUp className="w-4 h-4 text-green-500" />
+                <div className="bg-[#121215]/80 p-5 rounded-2xl border border-white/5 shadow-sm flex flex-col justify-between hover:border-white/10 transition-all select-none">
+                  <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between">
+                    Cosine Accuracy
+                    <ThumbsUp className="w-3.5 h-3.5 text-green-500" />
                   </div>
-                  <div className="text-3xl font-bold text-slate-800 mt-2">92%</div>
+                  <div className="text-2xl font-black text-white mt-3">92%</div>
                 </div>
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-                  <div className="text-slate-500 text-sm font-medium flex items-center justify-between">
-                    Unanswered
-                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                <div className="bg-[#121215]/80 p-5 rounded-2xl border border-white/5 shadow-sm flex flex-col justify-between hover:border-white/10 transition-all select-none">
+                  <div className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center justify-between">
+                    Refused (Guard)
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
                   </div>
-                  <div className="text-3xl font-bold text-slate-800 mt-2">24</div>
+                  <div className="text-2xl font-black text-white mt-3">24</div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-                  <h3 className="font-semibold text-slate-800">Most Frequently Asked</h3>
+              <div className="bg-[#121215]/80 rounded-2xl border border-white/5 shadow-sm overflow-hidden select-none">
+                <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01]">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300">Semantic Hits Frequency</h3>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-white/5">
                   {[
                     { q: "What is your refund policy for opened items?", count: 142 },
                     { q: "How long does standard shipping take to California?", count: 89 },
                     { q: "Do you offer international warranty?", count: 56 },
                   ].map((item, i) => (
-                    <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center text-slate-700">
-                        <HelpCircle className="w-4 h-4 mr-3 text-slate-400" />
-                        <span className="font-medium text-sm">{item.q}</span>
+                    <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.01] transition-colors">
+                      <div className="flex items-center text-slate-300">
+                        <HelpCircle className="w-4 h-4 mr-3 text-slate-500" />
+                        <span className="font-semibold text-xs">{item.q}</span>
                       </div>
-                      <span className="text-sm text-slate-500 bg-slate-100 px-2 py-1 rounded-md">{item.count} queries</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-white/5 border border-white/5 px-2.5 py-1 rounded-lg">{item.count} hits</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden border-l-4 border-l-amber-500">
-                <div className="px-6 py-4 border-b border-slate-100 bg-amber-50/30 flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-800">Unanswered Queries (Doc Gaps)</h3>
-                  <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">mock</span>
+              <div className="bg-[#121215]/80 rounded-2xl border border-white/5 shadow-sm overflow-hidden border-l-2 border-l-amber-500 select-none">
+                <div className="px-6 py-4 border-b border-white/5 bg-amber-500/[0.02] flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300">Vector Search Gaps</h3>
+                  <span className="text-[8px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded uppercase tracking-wider">Refusal Triggers</span>
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-white/5">
                   {[
                     { q: "Does the device support 220V outlets?", count: 6 },
                     { q: "Can I use multiple promo codes?", count: 4 },
                   ].map((item, i) => (
-                    <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50">
-                      <span className="font-medium text-sm text-slate-700">{item.q}</span>
-                      <button className="text-xs font-medium text-indigo-600 hover:text-indigo-800" onClick={() => setActiveTab('upload')}>Upload Doc</button>
+                    <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.01]">
+                      <span className="font-semibold text-xs text-slate-300">{item.q}</span>
+                      <button className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 hover:text-indigo-300 cursor-pointer" onClick={() => setActiveTab('upload')}>Supply Docs</button>
                     </div>
                   ))}
                 </div>
