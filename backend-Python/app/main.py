@@ -95,7 +95,7 @@ DOCUMENT TEXT:
 {preview_text}
 """
         response = groq.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=500
@@ -244,7 +244,7 @@ RULES:
         messages.append({"role": "user", "content": request.prompt})
 
         completion = groq.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=messages,
             temperature=0,
             stream=False 
