@@ -11,7 +11,7 @@ from typing import List
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from fastembed import TextEmbedding
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from groq import Groq
 import asyncio
