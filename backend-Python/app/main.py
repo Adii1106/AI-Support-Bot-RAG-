@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import List
 from dotenv import load_dotenv
 from supabase import create_client, Client
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from groq import Groq
@@ -41,8 +41,16 @@ print(f"Groq API Key detected: {'Yes' if groq_key else 'No'}")
 supabase: Client = create_client(supabase_url, supabase_key)
 groq = Groq(api_key=groq_key)
 
-# Using a lightweight local model for embeddings 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+# Using a lightweight local model for embeddings (ONNX runtime, no torch/CUDA -> fits in 512MB)
+_embedding_model = TextEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+class _EmbeddingModel:
+    def encode(self, texts):
+        if isinstance(texts, str):
+            return list(_embedding_model.embed([texts]))[0]
+        return list(_embedding_model.embed(texts))
+
+model = _EmbeddingModel()
 
 # --- PERFORMANCE CACHE ---
 # We store the document overviews in memory to avoid redundant Supabase selects on every chat.

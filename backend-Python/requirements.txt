@@ -5,7 +5,7 @@ python-dotenv
 supabase
 langchain
 langchain-community
-sentence-transformers
+fastembed
 pypdf
 groq
 pydantic
